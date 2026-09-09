@@ -1,0 +1,217 @@
+!SESSION 2026-09-03 18:26:26.728 -----------------------------------------------
+eclipse.buildId=4.34.0.20241128-0756
+java.version=21.0.5
+java.vendor=Eclipse Adoptium
+BootLoader constants: OS=linux, ARCH=x86_64, WS=gtk, NL=en_US
+Framework arguments:  -product org.eclipse.epp.package.jee.product
+Command-line arguments:  -os linux -ws gtk -arch x86_64 -product org.eclipse.epp.package.jee.product
+
+!ENTRY ch.qos.logback.classic 1 0 2026-09-03 18:26:29.061
+!MESSAGE Activated before the state location was initialized. Retry after the state location is initialized.
+
+!ENTRY ch.qos.logback.classic 1 0 2026-09-03 18:27:18.646
+!MESSAGE Logback config file: /home/thaniyel/Eclipeworkspace/irs-backend/.metadata/.plugins/org.eclipse.m2e.logback/logback.2.7.0.20241001-1350.xml
+
+!ENTRY com.gitlab.eclipse.gitlab-eclipse-plugin 1 0 2026-09-03 18:27:19.774
+!MESSAGE Successfully installed language server binaries in /opt/eclipse/configuration/org.eclipse.osgi/1008/data/lsp.
+
+!ENTRY com.gitlab.eclipse.gitlab-eclipse-plugin 1 0 2026-09-03 18:27:19.829
+!MESSAGE Passing through NO_PROXY to the language server.
+
+!ENTRY com.gitlab.eclipse.gitlab-eclipse-plugin 1 0 2026-09-03 18:27:19.839
+!MESSAGE Language server logs saved to: /home/thaniyel/.gitlab_plugin/language_server.log.
+
+!ENTRY com.gitlab.eclipse.gitlab-eclipse-plugin 1 0 2026-09-03 18:27:19.945
+!MESSAGE Language server started successfully.
+
+!ENTRY com.gitlab.eclipse.gitlab-eclipse-plugin 1 0 2026-09-03 18:27:20.841
+!MESSAGE Initialized Language Server: InitializeResult [
+  capabilities = ServerCapabilities [
+    positionEncoding = null
+    textDocumentSync = Either [
+      left = Full
+      right = null
+    ]
+    notebookDocumentSync = null
+    hoverProvider = null
+    completionProvider = CompletionOptions [
+      resolveProvider = true
+      triggerCharacters = null
+      allCommitCharacters = null
+      completionItem = null
+      workDoneProgress = null
+    ]
+    signatureHelpProvider = null
+    definitionProvider = null
+    typeDefinitionProvider = null
+    implementationProvider = null
+    referencesProvider = null
+    documentHighlightProvider = null
+    documentSymbolProvider = null
+    workspaceSymbolProvider = null
+    codeActionProvider = null
+    codeLensProvider = null
+    documentFormattingProvider = null
+    documentRangeFormattingProvider = null
+    documentOnTypeFormattingProvider = null
+    renameProvider = null
+    documentLinkProvider = null
+    colorProvider = null
+    foldingRangeProvider = null
+    declarationProvider = null
+    executeCommandProvider = null
+    workspace = WorkspaceServerCapabilities [
+      workspaceFolders = WorkspaceFoldersOptions [
+        supported = true
+        changeNotifications = Either [
+          left = null
+          right = true
+        ]
+      ]
+      fileOperations = null
+    ]
+    typeHierarchyProvider = null
+    callHierarchyProvider = null
+    selectionRangeProvider = null
+    linkedEditingRangeProvider = null
+    semanticTokensProvider = null
+    monikerProvider = null
+    inlayHintProvider = null
+    inlineValueProvider = null
+    diagnosticProvider = null
+    experimental = null
+  ]
+  serverInfo = ServerInfo [
+    name = "GitLab Language Server"
+    version = "7.39.0"
+  ]
+]
+
+!ENTRY com.gitlab.eclipse.gitlab-eclipse-plugin 1 0 2026-09-03 18:27:20.847
+!MESSAGE Sending configuration change notification to Language Server.
+
+!ENTRY com.gitlab.eclipse.gitlab-eclipse-plugin 1 0 2026-09-03 18:27:20.873
+!MESSAGE Sending configuration change notification to Language Server.
+
+!ENTRY org.eclipse.core.jobs 4 2 2026-09-03 18:27:42.862
+!MESSAGE An internal error occurred during: "Update Job".
+!STACK 0
+java.lang.IllegalStateException: The profile is currently in use.
+	at org.eclipse.equinox.internal.p2.engine.SimpleProfileRegistry.internalGetProfileStateProperties(SimpleProfileRegistry.java:1179)
+	at org.eclipse.equinox.internal.p2.engine.SimpleProfileRegistry.getProfileStateProperties(SimpleProfileRegistry.java:1169)
+	at org.eclipse.equinox.internal.p2.ui.sdk.scheduler.migration.MigrationSupport.isFirstTimeRunningThisSharedInstance(MigrationSupport.java:148)
+	at org.eclipse.equinox.internal.p2.ui.sdk.scheduler.migration.MigrationSupport.performMigration(MigrationSupport.java:62)
+	at org.eclipse.equinox.internal.p2.ui.sdk.scheduler.AutomaticUpdateScheduler$1.run(AutomaticUpdateScheduler.java:77)
+	at org.eclipse.core.internal.jobs.Worker.run(Worker.java:63)
+
+!ENTRY com.gitlab.eclipse.gitlab-eclipse-plugin 1 0 2026-09-03 18:29:05.027
+!MESSAGE Ended all Code Suggestion sessions.
+
+!ENTRY com.gitlab.eclipse.gitlab-eclipse-plugin 1 0 2026-09-03 18:29:05.028
+!MESSAGE Canceling the timer for token refresh.
+
+!ENTRY com.gitlab.eclipse.gitlab-eclipse-plugin 1 0 2026-09-03 18:29:05.039
+!MESSAGE Language Server exited.
+!SESSION 2026-09-03 18:29:11.337 -----------------------------------------------
+eclipse.buildId=4.34.0.20241128-0756
+java.version=21.0.5
+java.vendor=Eclipse Adoptium
+BootLoader constants: OS=linux, ARCH=x86_64, WS=gtk, NL=en_US
+Framework arguments:  -product org.eclipse.epp.package.jee.product
+Command-line arguments:  -os linux -ws gtk -arch x86_64 -product org.eclipse.epp.package.jee.product
+
+!ENTRY ch.qos.logback.classic 1 0 2026-09-03 18:29:13.828
+!MESSAGE Activated before the state location was initialized. Retry after the state location is initialized.
+
+!ENTRY ch.qos.logback.classic 1 0 2026-09-03 18:29:14.834
+!MESSAGE Logback config file: /home/thaniyel/Eclipeworkspace/irs-backend/.metadata/.plugins/org.eclipse.m2e.logback/logback.2.7.0.20241001-1350.xml
+
+!ENTRY com.gitlab.eclipse.gitlab-eclipse-plugin 1 0 2026-09-03 18:29:16.125
+!MESSAGE Successfully installed language server binaries in /opt/eclipse/configuration/org.eclipse.osgi/1008/data/lsp.
+
+!ENTRY com.gitlab.eclipse.gitlab-eclipse-plugin 1 0 2026-09-03 18:29:16.184
+!MESSAGE Passing through NO_PROXY to the language server.
+
+!ENTRY com.gitlab.eclipse.gitlab-eclipse-plugin 1 0 2026-09-03 18:29:16.194
+!MESSAGE Language server logs saved to: /home/thaniyel/.gitlab_plugin/language_server.log.
+
+!ENTRY com.gitlab.eclipse.gitlab-eclipse-plugin 1 0 2026-09-03 18:29:16.305
+!MESSAGE Language server started successfully.
+
+!ENTRY com.gitlab.eclipse.gitlab-eclipse-plugin 1 0 2026-09-03 18:29:17.172
+!MESSAGE Initialized Language Server: InitializeResult [
+  capabilities = ServerCapabilities [
+    positionEncoding = null
+    textDocumentSync = Either [
+      left = Full
+      right = null
+    ]
+    notebookDocumentSync = null
+    hoverProvider = null
+    completionProvider = CompletionOptions [
+      resolveProvider = true
+      triggerCharacters = null
+      allCommitCharacters = null
+      completionItem = null
+      workDoneProgress = null
+    ]
+    signatureHelpProvider = null
+    definitionProvider = null
+    typeDefinitionProvider = null
+    implementationProvider = null
+    referencesProvider = null
+    documentHighlightProvider = null
+    documentSymbolProvider = null
+    workspaceSymbolProvider = null
+    codeActionProvider = null
+    codeLensProvider = null
+    documentFormattingProvider = null
+    documentRangeFormattingProvider = null
+    documentOnTypeFormattingProvider = null
+    renameProvider = null
+    documentLinkProvider = null
+    colorProvider = null
+    foldingRangeProvider = null
+    declarationProvider = null
+    executeCommandProvider = null
+    workspace = WorkspaceServerCapabilities [
+      workspaceFolders = WorkspaceFoldersOptions [
+        supported = true
+        changeNotifications = Either [
+          left = null
+          right = true
+        ]
+      ]
+      fileOperations = null
+    ]
+    typeHierarchyProvider = null
+    callHierarchyProvider = null
+    selectionRangeProvider = null
+    linkedEditingRangeProvider = null
+    semanticTokensProvider = null
+    monikerProvider = null
+    inlayHintProvider = null
+    inlineValueProvider = null
+    diagnosticProvider = null
+    experimental = null
+  ]
+  serverInfo = ServerInfo [
+    name = "GitLab Language Server"
+    version = "7.39.0"
+  ]
+]
+
+!ENTRY com.gitlab.eclipse.gitlab-eclipse-plugin 1 0 2026-09-03 18:29:17.176
+!MESSAGE Sending configuration change notification to Language Server.
+
+!ENTRY com.gitlab.eclipse.gitlab-eclipse-plugin 1 0 2026-09-03 18:29:17.189
+!MESSAGE Sending configuration change notification to Language Server.
+
+!ENTRY com.gitlab.eclipse.gitlab-eclipse-plugin 1 0 2026-09-03 18:29:38.588
+!MESSAGE Ended all Code Suggestion sessions.
+
+!ENTRY com.gitlab.eclipse.gitlab-eclipse-plugin 1 0 2026-09-03 18:29:38.588
+!MESSAGE Canceling the timer for token refresh.
+
+!ENTRY com.gitlab.eclipse.gitlab-eclipse-plugin 1 0 2026-09-03 18:29:38.601
+!MESSAGE Language Server exited.

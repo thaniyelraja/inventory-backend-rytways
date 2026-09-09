@@ -2,6 +2,8 @@ package com.project.irs_backend.dto;
 
 import java.math.BigDecimal;
 
+import com.project.irs_backend.entity.Unit;
+
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -19,13 +21,7 @@ public class MaterialSaveDto {
 
 	private BigDecimal materialPrice;
 
-	private Integer maxStockLevel;
-
-	private Integer reorderLevel;
-
-	private String unit;
-
-	private Integer availableQuantity;
+	private Long unitId;
 
 	private Long categoryId;
 

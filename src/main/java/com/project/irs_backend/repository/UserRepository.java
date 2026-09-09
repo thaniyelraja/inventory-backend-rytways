@@ -9,6 +9,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import com.project.irs_backend.dto.UserResponseDto;
 import com.project.irs_backend.entity.User;
 
 @Repository

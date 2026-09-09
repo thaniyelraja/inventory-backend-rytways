@@ -1,9 +1,13 @@
 package com.project.irs_backend.service;
 
+import java.util.List;
+
 import org.springframework.stereotype.Service;
 
+import com.project.irs_backend.entity.Department;
+import com.project.irs_backend.entity.Status;
 import com.project.irs_backend.entity.User;
-import com.project.irs_backend.enums.UserStatus;
+import com.project.irs_backend.repository.DepartmentRepository;
 
 import lombok.RequiredArgsConstructor;
 
@@ -12,6 +16,8 @@ import lombok.RequiredArgsConstructor;
 public class AuthService {
 
 	private final UserService userService;
+
+	private final DepartmentRepository departmentRepository;
 
 	public User login(String email, String password) {
 		User user = userService.findByEmail(email);
@@ -22,10 +28,16 @@ public class AuthService {
 		if (!user.getPassword().equals(password)) {
 			throw new RuntimeException("Invalid email or password");
 		}
-		if (user.getStatus() != UserStatus.ACTIVE) {
+		if (!"ACTIVE".equals(user.getStatus().getStatusCode())) {
 			throw new RuntimeException("User account is inactive");
 		}
 		return user;
+
+	}
+
+	public List<Department> getDepartments() {
+
+		return departmentRepository.findAll();
 
 	}
 

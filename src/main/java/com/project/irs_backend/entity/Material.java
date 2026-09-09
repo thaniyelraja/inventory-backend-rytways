@@ -32,7 +32,7 @@ public class Material {
 	@Column(name = "material_id")
 	private Long materialId;
 
-	@Column(name = "material_code")
+	@Column(name = "material_code", unique = true)
 	private String materialCode;
 
 	@Column(name = "material_name")
@@ -41,30 +41,15 @@ public class Material {
 	@Column(name = "material_desc")
 	private String materialDesc;
 
-	private String unit;
+	@ManyToOne
+	@JoinColumn(name = "unit_id")
+	private Unit unit;
 
 	@Column(name = "material_price")
 	private BigDecimal materialPrice;
 
-	@Column(name = "available_quantity")
-	private Integer availableQuantity;
-
 	@ManyToOne
 	@JoinColumn(name = "category_id")
 	private Category category;
-
-	@Column(name = "reorder_level")
-	private Integer reorderLevel;
-
-	@Column(name = "max_stock_level")
-	private Integer maxStockLevel;
-
-	@OneToMany(mappedBy = "material")
-	@JsonIgnore
-	private List<SupplierMaterial> supplierMaterils;
-
-	@OneToMany(mappedBy = "material")
-	@JsonIgnore
-	private List<InventoryRequest> inventoryRequest;
 
 }

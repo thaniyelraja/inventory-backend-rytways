@@ -8,8 +8,8 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class InventoryRequestItemDto {
-	
-	private Long materialId;
-	private Integer quantity;		
+
+	private Long inventoryId;
+	private Integer quantity;
 
 }

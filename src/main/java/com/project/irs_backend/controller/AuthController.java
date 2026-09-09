@@ -1,5 +1,7 @@
 package com.project.irs_backend.controller;
 
+import java.util.List;
+
 import org.springframework.beans.BeanUtils;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
@@ -11,7 +13,11 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.project.irs_backend.dto.LoginRequest;
 import com.project.irs_backend.dto.LoginResponse;
+import com.project.irs_backend.dto.UserRequestDto;
+import com.project.irs_backend.dto.UserResponseDto;
+import com.project.irs_backend.entity.Department;
 import com.project.irs_backend.entity.User;
+import com.project.irs_backend.enums.Role;
 import com.project.irs_backend.service.AuthService;
 import com.project.irs_backend.service.UserService;
 
@@ -40,9 +46,19 @@ public class AuthController {
 
 	}
 
-	@PostMapping("/create-test-user")
-	public ResponseEntity<User> createUser(@RequestBody User user) {
+	@PostMapping("/create-user")
+	public ResponseEntity<UserResponseDto> createUser(@Valid @RequestBody UserRequestDto user) {
 		return ResponseEntity.ok(userService.createUser(user));
 	}
+
+	@GetMapping("/roles")
+	public ResponseEntity<Role[]> getRoles() {
+		return ResponseEntity.ok(Role.values());
+	}
+
+	@GetMapping("/departments")
+	public ResponseEntity<List<Department>> getDepartments() {
+		return ResponseEntity.ok(authService.getDepartments());
+	}	
 
 }
