@@ -1,51 +1,51 @@
-//package com.project.irs_backend.service;
-//
-//import java.math.BigDecimal;
-//import java.time.LocalDate;
-//import java.time.LocalDateTime;
-//import java.util.ArrayList;
-//import java.util.HashMap;
-//import java.util.LinkedHashMap;
-//import java.util.List;
-//import java.util.Map;
-//
-//import org.springframework.stereotype.Service;
-//
-//import com.project.irs_backend.dto.AdminDashboardSummary;
-//import com.project.irs_backend.dto.DashboardSummary;
-//import com.project.irs_backend.dto.RequestStatusCount;
-//import com.project.irs_backend.dto.SpendingOverviewDto;
-//import com.project.irs_backend.dto.TopMonthlyDto;
-//import com.project.irs_backend.entity.InventoryRequest;
-//import com.project.irs_backend.dto.ProductTrend;
-//import com.project.irs_backend.repository.InventoryRequestRepository;
-//import com.project.irs_backend.repository.MaterialRepository;
-//import com.project.irs_backend.repository.UserRepository;
-//
-//import lombok.RequiredArgsConstructor;
-//
-//@Service
-//@RequiredArgsConstructor
-//public class DashboardService {
-//
-//	private final MaterialRepository materialRepository;
-//
-//	private final InventoryRequestRepository inventoryRequestRepository;
-//
-//	private final UserRepository userRepository;
-//
-//	public DashboardSummary getDashboardSummary(Long userId) {
-//
-//		Long pendingRequests = inventoryRequestRepository.countByStatus("PENDING", userId);
-//
-//		Long approvedRequests = inventoryRequestRepository.countByStatus("APPROVED", userId);
-//
-//		Long rejectedRequests = inventoryRequestRepository.countByStatus("REJECTED", userId);
-//
-//		BigDecimal thisMonthSpending = inventoryRequestRepository.getThisMonthSpending(userId);
-//
-//		return new DashboardSummary(pendingRequests, approvedRequests, rejectedRequests, thisMonthSpending);
-//	}
+package com.project.irs_backend.service;
+
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+
+import org.springframework.stereotype.Service;
+
+import com.project.irs_backend.dto.AdminDashboardSummary;
+import com.project.irs_backend.dto.DashboardSummary;
+import com.project.irs_backend.dto.RequestStatusCount;
+import com.project.irs_backend.dto.SpendingOverviewDto;
+import com.project.irs_backend.dto.TopMonthlyDto;
+import com.project.irs_backend.entity.InventoryRequest;
+import com.project.irs_backend.dto.ProductTrend;
+import com.project.irs_backend.repository.InventoryRequestRepository;
+import com.project.irs_backend.repository.MaterialRepository;
+import com.project.irs_backend.repository.UserRepository;
+
+import lombok.RequiredArgsConstructor;
+
+@Service
+@RequiredArgsConstructor
+public class DashboardService {
+
+	private final MaterialRepository materialRepository;
+
+	private final InventoryRequestRepository inventoryRequestRepository;
+
+	private final UserRepository userRepository;
+
+	public DashboardSummary getDashboardSummary(Long userId, Long departmentId) {
+
+		Long pendingRequests = inventoryRequestRepository.countByStatus("PENDING", userId, departmentId);
+
+		Long approvedRequests = inventoryRequestRepository.countByStatus("APPROVED", userId, departmentId);
+
+		Long rejectedRequests = inventoryRequestRepository.countByStatus("REJECTED", userId, departmentId);
+
+		BigDecimal thisMonthSpending = inventoryRequestRepository.getThisMonthSpending(userId, departmentId);
+
+		return new DashboardSummary(pendingRequests, approvedRequests, rejectedRequests, thisMonthSpending);
+	}
 //
 //	public List<InventoryRequest> getRecentRequests(Long userId, LocalDateTime startDateTime) {
 //		return inventoryRequestRepository.findRecentRequests(userId, startDateTime);
@@ -133,4 +133,4 @@
 //
 //		return new AdminDashboardSummary(totalProducts, lowStockProducts, outOfStockProducts, mostStockProducts);
 //	}
-//}
+}

@@ -1,5 +1,7 @@
 package com.project.irs_backend.dto;
 
+import java.util.List;
+
 import com.project.irs_backend.entity.Department;
 import com.project.irs_backend.entity.Status;
 import com.project.irs_backend.enums.Role;
@@ -12,17 +14,15 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class UserResponseDto {
-	
+
 	private Long userId;
 
 	private String name;
 
 	private String email;
 
-	private Role role;
-
 	private Status status;
-	
-	private Department department;
+
+	private List<UserDepartmentResponseDto> departments;
 
 }

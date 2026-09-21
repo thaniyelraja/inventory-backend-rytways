@@ -4,17 +4,12 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Optional;
-
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
-
-import com.project.irs_backend.dto.TopMonthlyDto;
 import com.project.irs_backend.entity.InventoryRequest;
-import com.project.irs_backend.entity.InventoryRequestMessage;
 
 public interface InventoryRequestRepository extends JpaRepository<InventoryRequest, Long> {
 
@@ -26,6 +21,7 @@ public interface InventoryRequestRepository extends JpaRepository<InventoryReque
 			join unit u on m.unit_id = u.unit_id
 			join status s on ir.status_id = s.status_id
 			where ir.user_id = :userId
+			and ir.department_id = :departmentId
 			and (
 				:search = ''
 				or lower(m.material_code) like lower(concat('%', :search, '%'))
@@ -34,6 +30,14 @@ public interface InventoryRequestRepository extends JpaRepository<InventoryReque
 			and (
 				:status = 'ALL'
 				or s.status_code = :status
+				)
+				and (
+				:fromDate is null
+				or ir.requested_at >= :fromDate
+				)
+			and (
+				:toDate is null
+				or ir.requested_at < date_add(:toDate, interval 1 day)
 				)
 			order by ir.requested_at desc;
 						""", countQuery = """
@@ -44,6 +48,7 @@ public interface InventoryRequestRepository extends JpaRepository<InventoryReque
 			join unit u on m.unit_id = u.unit_id
 			join status s on ir.status_id = s.status_id
 			where ir.user_id = :userId
+			and ir.department_id = :department_id
 			and (
 				:search = ''
 				or lower(m.material_code) like lower(concat('%', :search, '%'))
@@ -53,11 +58,19 @@ public interface InventoryRequestRepository extends JpaRepository<InventoryReque
 				:status = 'ALL'
 				or s.status_code = :status
 				)
+			and (
+				:fromDate is null
+				or ir.requested_at >= :fromDate
+				)
+			and (
+				:toDate is null
+				or ir.requested_at < date_add(:toDate, interval 1 day)
+				)
 			order by ir.requested_at desc;
-
 						""", nativeQuery = true)
 	Page<InventoryRequest> searchAndFilterPerUser(@Param("search") String search, @Param("status") String status,
-			@Param("userId") Long userId, Pageable pageable);
+			@Param("fromDate") LocalDate fromDate, @Param("toDate") LocalDate toDate,
+			@Param("departmentId") Long departmentId, @Param("userId") Long userId, Pageable pageable);
 
 	@Query(value = """
 			SELECT DISTINCT ir.* FROM inventory_request ir join users u on ir.user_id = u.user_id
@@ -65,7 +78,7 @@ public interface InventoryRequestRepository extends JpaRepository<InventoryReque
 			JOIN inventory i ON iri.inventory_id = i.inventory_id
 			join material m on i.material_id = m.material_id
 			join status s on ir.status_id = s.status_id
-			where u.department_id = (SELECT department_id from users where user_id = :hodUserId)
+			where ir.department_id = :departmentId
 			and s.status_code = 'PENDING'
 				AND (
 				:search = ''
@@ -79,64 +92,98 @@ public interface InventoryRequestRepository extends JpaRepository<InventoryReque
 			JOIN inventory i ON iri.inventory_id = i.inventory_id
 			join material m on i.material_id = m.material_id
 			join status s on ir.status_id = s.status_id
-			where u.department_id = (SELECT department_id from users where user_id = :hodUserId)
+			where ir.department_id = :departmentId
 			AND s.status_code = 'PENDING'
 			""", nativeQuery = true)
-	Page<InventoryRequest> searchAndFilterAllManage(@Param("hodUserId") Long hodUserId, @Param("search") String search,
-			Pageable pageable);
+	Page<InventoryRequest> searchAndFilterAllManage(@Param("departmentId") Long departmentId,
+			@Param("search") String search, Pageable pageable);
+
+	List<InventoryRequest> findByDepartment_DepartmentIdAndRequestedAtGreaterThanEqualAndRequestedAtLessThan(
+			Long departmentId, LocalDateTime startDay, LocalDateTime endOfDay);
+
+	@Query(value = """
+			SELECT ir.*
+			FROM inventory_request ir
+			JOIN users u
+			    ON ir.user_id = u.user_id
+			JOIN status s
+			    ON ir.status_id = s.status_id
+			WHERE ir.department_id = :departmentId
+			  AND s.status_code IN ('APPROVED', 'REJECTED')
+			  AND (
+			        :search = ''
+			        OR LOWER(u.name) LIKE LOWER(CONCAT('%', :search, '%'))
+			        OR EXISTS (
+			            SELECT 1
+			            FROM inventory_request_item iri
+			            JOIN inventory i
+			                ON iri.inventory_id = i.inventory_id
+			            JOIN material m
+			                ON i.material_id = m.material_id
+			            WHERE iri.inventory_request_id = ir.inventory_request_id
+			              AND (
+			                    LOWER(m.material_code) LIKE LOWER(CONCAT('%', :search, '%'))
+			                    OR LOWER(m.material_name) LIKE LOWER(CONCAT('%', :search, '%'))
+			                  )
+			        )
+			      )
+			ORDER BY
+			    CASE
+			        WHEN s.status_code = 'APPROVED' THEN ir.approved_at
+			        WHEN s.status_code = 'REJECTED' THEN ir.rejected_at
+			    END DESC
+			""", countQuery = """
+			SELECT COUNT(*)
+			FROM inventory_request ir
+			JOIN status s
+			    ON ir.status_id = s.status_id
+			WHERE ir.department_id = :departmentId
+			  AND s.status_code IN ('APPROVED', 'REJECTED')
+			  AND (
+			        :search = ''
+			        OR EXISTS (
+			            SELECT 1
+			            FROM inventory_request_item iri
+			            JOIN inventory i
+			                ON iri.inventory_id = i.inventory_id
+			            JOIN material m
+			                ON i.material_id = m.material_id
+			            WHERE iri.inventory_request_id = ir.inventory_request_id
+			              AND (
+			                    LOWER(m.material_code) LIKE LOWER(CONCAT('%', :search, '%'))
+			                    OR LOWER(m.material_name) LIKE LOWER(CONCAT('%', :search, '%'))
+			                  )
+			        )
+			      )
+			""", nativeQuery = true)
+	Page<InventoryRequest> searchAndFilterAllView(@Param("departmentId") Long departmentId,
+			@Param("search") String search, Pageable pageable);
 
 	List<InventoryRequest> findByStatus_StatusCodeAndRequestedAtBeforeAndReminderSentFalse(String statusCose,
 			LocalDateTime requestedAt);
 
-//	@Query(value = """
-//			SELECT ir.* FROM inventory_request ir JOIN material m ON ir.material_id = m.material_id
-//			JOIN users u ON ir.user_id = u.user_id
-//				AND
-//				(
-//					:search = ''
-//					OR LOWER(m.material_code) LIKE LOWER(CONCAT('%', :search, '%'))
-//					OR LOWER(m.material_name) LIKE LOWER(CONCAT('%', :search, '%'))
-//					OR LOWER(u.name) LIKE LOWER(CONCAT('%', :search, '%'))
-//				 )
-//				 AND
-//				 request_status IN ('APPROVED', 'REJECTED')
-//				 ORDER BY
-//				 	CASE
-//				 		WHEN ir.request_status = 'APPROVED' THEN ir.approved_at
-//				 		WHEN ir.request_status = 'REJECTED' THEN ir.rejected_at
-//				 	END DESC
-//			""", countQuery = """
-//			 SELECT COUNT(*)
-//			       FROM inventory_request ir
-//			       JOIN material m ON ir.material_id = m.material_id
-//				   JOIN users u ON ir.user_id = u.user_id
-//			       AND
-//			           (
-//			               :search = ''
-//			               OR LOWER(m.material_code) LIKE LOWER(CONCAT('%', :search, '%'))
-//			               OR LOWER(m.material_name) LIKE LOWER(CONCAT('%', :search, '%'))
-//			               OR LOWER(u.name) LIKE LOWER(CONCAT('%', :search, '%'))
-//			           )
-//			           AND request_status IN ('APPROVED', 'REJECTED')
-//			""", nativeQuery = true)
-//	Page<InventoryRequest> searchAndFilterAllView(@Param("search") String search, Pageable pageable);
-//
-//	@Query(value = """
-//			select coalesce(sum(ir.approved_quantity * m.material_price), 0) from inventory_request ir join material m on
-//			ir.material_id = m.material_id where ir.user_id = :userId
-//			and ir.request_status = 'APPROVED' and month(ir.approved_at) = MONTH(CURRENT_DATE)
-//			and year(ir.approved_at) = year(CURRENT_DATE);
-//						""", nativeQuery = true)
-//	BigDecimal getThisMonthSpending(@Param("userId") Long userId);
-//
-//	@Query(value = """
-//			SELECT COUNT(*)
-//			FROM inventory_request
-//			WHERE request_status = :status
-//			AND user_id = :userId
-//			""", nativeQuery = true)
-//	Long countByStatus(@Param("status") String status, @Param("userId") Long userId);
-//
+	@Query(value = """
+			SELECT COUNT(*) FROM inventory_request ir join status s on ir.status_id = s.status_id
+			WHERE s.status_code = :status
+				AND ir.user_id = :userId and department_id = :departmentId;
+			""", nativeQuery = true)
+	Long countByStatus(@Param("status") String status, @Param("userId") Long userId,
+			@Param("departmentId") Long departmentId);
+
+	@Query(value = """
+			 select coalesce(sum(iri.approved_quantity * m.material_price), 0) from inventory_request ir join
+			 inventory_request_item iri on ir.inventory_request_id = iri.inventory_request_id
+			 join inventory i on iri.inventory_id = i.inventory_id
+			 join material m on i.material_id = m.material_id
+			         join status s on ir.status_id = s.status_id
+			         join users u on ir.user_id = u.user_id
+			         join department d on ir.department_id = d.department_id
+			         where d.department_id = :departmentId and u.user_id = :userId
+			and s.status_code = 'APPROVED' and month(ir.approved_at) = MONTH(CURRENT_DATE)
+			and year(ir.approved_at) = year(CURRENT_DATE);
+						""", nativeQuery = true)
+	BigDecimal getThisMonthSpending(@Param("userId") Long userId, @Param("departmentId") Long departmentId);
+
 //	@Query(value = """
 //			SELECT ir.* FROM inventory_request ir where ir.user_id = :userId and
 //			(:startDateTime IS NULL or(

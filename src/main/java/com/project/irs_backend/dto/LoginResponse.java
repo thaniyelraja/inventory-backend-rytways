@@ -1,5 +1,8 @@
 package com.project.irs_backend.dto;
 
+import java.util.List;
+
+import com.project.irs_backend.entity.Status;
 import com.project.irs_backend.enums.Role;
 
 import lombok.Data;
@@ -13,6 +16,8 @@ public class LoginResponse {
 
 	private String email;
 
-	private Role role;
+	private Status status;
+
+	private List<UserDepartmentResponseDto> departments;
 
 }

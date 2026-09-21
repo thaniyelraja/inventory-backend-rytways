@@ -49,8 +49,8 @@ public class MaterialService {
 		return categoryRepository.findAll();
 	}
 
-	public List<Material> getMaterialsForAddStock(Long categoryId) {
-		return materialRepository.findMaterialsForAddStock(categoryId);
+	public List<Material> getMaterialsForAddStock(Long categoryId, Long materialId) {
+		return materialRepository.findMaterialsForAddStock(categoryId, materialId);
 	}
 
 	public Material createMaterial(MaterialSaveDto dto) {

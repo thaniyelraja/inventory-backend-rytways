@@ -1,0 +1,8 @@
+package com.project.irs_backend.enums;
+
+public enum HistoryAction {
+
+	CREATED, APPROVED, REJECTED, CLARIFICATION_REQUESTED, CLARIFICATION_VIEWED, CLARIFICATION_REPLIED, CANCELLED,
+	UPDATED
+
+}

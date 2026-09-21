@@ -1,5 +1,6 @@
 package com.project.irs_backend.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.project.irs_backend.enums.Role;
 
 import jakarta.persistence.Column;
@@ -32,10 +33,12 @@ public class UserDepartment {
 	@Column(name = "user_department_id")
 	private Long userDepartmentId;
 
+	@JsonIgnore
 	@ManyToOne
 	@JoinColumn(name = "user_id", nullable = false)
 	private User user;
 
+	@JsonIgnore
 	@ManyToOne
 	@JoinColumn(name = "department_id", nullable = false)
 	private Department department;

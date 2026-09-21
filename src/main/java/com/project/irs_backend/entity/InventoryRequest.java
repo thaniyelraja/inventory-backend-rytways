@@ -6,6 +6,8 @@ import java.util.List;
 import org.hibernate.annotations.CreationTimestamp;
 import org.springframework.data.annotation.Transient;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -39,12 +41,19 @@ public class InventoryRequest {
 	private User user;
 
 	@ManyToOne
+	@JoinColumn(name = "department_id", nullable = false)
+	private Department department;
+
+	@ManyToOne
 	@JoinColumn(name = "status_id")
 	private Status status;
 
 	@CreationTimestamp
 	@Column(name = "requested_at", updatable = false)
 	private LocalDateTime requestedAt;
+
+	@Column(name = "updation_remarks")
+	private String updationRemarks;
 
 	@Column(name = "updated_at")
 	private LocalDateTime updatedAt;
@@ -61,9 +70,13 @@ public class InventoryRequest {
 	@Column(name = "rejection_remarks")
 	private String rejectionRemarks;
 
-	@Column(name = "clarification_pending", nullable = false)
-	private Boolean clarificationPending = false;
-	
+	@Column(name = "cancellation_remarks")
+	private String cancellationRemarks;
+
+	@ManyToOne
+	@JoinColumn(name = "clarification_status_id")
+	private Status clarificationStatus;
+
 	@Column(name = "reminder_sent", nullable = false)
 	private Boolean reminderSent = false;
 

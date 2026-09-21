@@ -1,5 +1,7 @@
 package com.project.irs_backend.dto;
 
+import java.util.List;
+
 import com.project.irs_backend.entity.Department;
 import com.project.irs_backend.enums.Role;
 
@@ -29,10 +31,7 @@ public class UserRequestDto {
 	@Pattern(regexp = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{8,}$", message = "Password must containe atleast 8 characters, one uppercase, one number and one special character")
 	private String password;
 
-	@NotNull(message = "Role is required")
-	private Role role;
-
 	@NotNull(message = "Department is required")
-	private Department department;
+	private List<UserDepartmentDto> departments;
 
 }

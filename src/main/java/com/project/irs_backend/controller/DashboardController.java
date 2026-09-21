@@ -1,38 +1,38 @@
-//package com.project.irs_backend.controller;
-//
-//import java.time.LocalDate;
-//import java.time.LocalDateTime;
-//import java.util.List;
-//
-//import org.springframework.http.ResponseEntity;
-//import org.springframework.web.bind.annotation.GetMapping;
-//import org.springframework.web.bind.annotation.PathVariable;
-//import org.springframework.web.bind.annotation.RequestMapping;
-//import org.springframework.web.bind.annotation.RequestParam;
-//import org.springframework.web.bind.annotation.RestController;
-//
-//import com.project.irs_backend.dto.AdminDashboardSummary;
-//import com.project.irs_backend.dto.DashboardSummary;
-//import com.project.irs_backend.dto.RequestStatusCount;
-//import com.project.irs_backend.dto.SpendingOverviewDto;
-//import com.project.irs_backend.dto.TopMonthlyDto;
-//import com.project.irs_backend.entity.InventoryRequest;
-//import com.project.irs_backend.dto.ProductTrend;
-//import com.project.irs_backend.service.DashboardService;
-//
-//import lombok.RequiredArgsConstructor;
-//
-//@RestController
-//@RequestMapping("/dashboard")
-//@RequiredArgsConstructor
-//public class DashboardController {
-//
-//	private final DashboardService dashboardService;
-//
-//	@GetMapping("/summary")
-//	public DashboardSummary getDashboardSummary(@RequestParam Long userId) {
-//		return dashboardService.getDashboardSummary(userId);
-//	}
+package com.project.irs_backend.controller;
+
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.List;
+
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.project.irs_backend.dto.AdminDashboardSummary;
+import com.project.irs_backend.dto.DashboardSummary;
+import com.project.irs_backend.dto.RequestStatusCount;
+import com.project.irs_backend.dto.SpendingOverviewDto;
+import com.project.irs_backend.dto.TopMonthlyDto;
+import com.project.irs_backend.entity.InventoryRequest;
+import com.project.irs_backend.dto.ProductTrend;
+import com.project.irs_backend.service.DashboardService;
+
+import lombok.RequiredArgsConstructor;
+
+@RestController
+@RequestMapping("/dashboard")
+@RequiredArgsConstructor
+public class DashboardController {
+
+	private final DashboardService dashboardService;
+
+	@GetMapping("/summary")
+	public DashboardSummary getDashboardSummary(@RequestParam Long userId, @RequestParam Long departmentId) {
+		return dashboardService.getDashboardSummary(userId, departmentId);
+	}
 //
 //	@GetMapping("/recent/{userId}")
 //	public ResponseEntity<List<InventoryRequest>> getRecentRequests(@PathVariable Long userId,
@@ -70,4 +70,4 @@
 //		return dashboardService.getAdminDashboardSummary();
 //	}
 //
-//}
+}

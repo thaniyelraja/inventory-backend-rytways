@@ -1,6 +1,6 @@
 package com.project.irs_backend.dto;
 
-import java.util.List;
+import com.project.irs_backend.enums.Role;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -9,10 +9,11 @@ import lombok.NoArgsConstructor;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class InventoryRequestDto {
+public class UserDepartmentResponseDto {
 
-	private Long userId;
 	private Long departmentId;
-	private List<InventoryRequestItemDto> items;
+	private String departmentName;
+	private String departmentCode;
+	private Role role;
 
 }

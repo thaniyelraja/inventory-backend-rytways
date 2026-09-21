@@ -1,5 +1,6 @@
 package com.project.irs_backend.service;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import org.springframework.data.domain.Page;
@@ -15,20 +16,27 @@ import com.project.irs_backend.dto.InventoryRequestApprovalItemDto;
 import com.project.irs_backend.dto.InventoryRequestDto;
 import com.project.irs_backend.dto.InventoryRequestItemDto;
 import com.project.irs_backend.dto.InventoryRequestMessageDto;
+import com.project.irs_backend.entity.Department;
 import com.project.irs_backend.entity.Inventory;
 import com.project.irs_backend.entity.InventoryRequest;
+import com.project.irs_backend.entity.InventoryRequestHistory;
 import com.project.irs_backend.entity.InventoryRequestItem;
 import com.project.irs_backend.entity.InventoryRequestMessage;
 import com.project.irs_backend.entity.Material;
 import com.project.irs_backend.entity.Status;
 import com.project.irs_backend.entity.User;
+import com.project.irs_backend.entity.UserDepartment;
+import com.project.irs_backend.enums.HistoryAction;
 import com.project.irs_backend.enums.Role;
+import com.project.irs_backend.repository.DepartmentRepository;
 import com.project.irs_backend.repository.InventoryRepository;
+import com.project.irs_backend.repository.InventoryRequestHistoryRepository;
 import com.project.irs_backend.repository.InventoryRequestItemRepository;
 import com.project.irs_backend.repository.InventoryRequestMessageRepository;
 import com.project.irs_backend.repository.InventoryRequestRepository;
 import com.project.irs_backend.repository.MaterialRepository;
 import com.project.irs_backend.repository.StatusRepository;
+import com.project.irs_backend.repository.UserDepartmentRepository;
 import com.project.irs_backend.repository.UserRepository;
 
 import lombok.RequiredArgsConstructor;
@@ -41,6 +49,8 @@ public class InventoryRequestService {
 
 	private final InventoryRequestItemRepository inventoryRequestItemRepository;
 
+	private final UserDepartmentRepository userDepartmentRepository;
+
 	private final StatusRepository statusRepository;
 
 	private final MaterialRepository materialRepository;
@@ -51,7 +61,11 @@ public class InventoryRequestService {
 
 	private final InventoryRequestMessageRepository inventoryRequestMessageRepository;
 
+	private final DepartmentRepository departmentRepository;
+
 	private final JavaMailSender mailSender;
+
+	private final InventoryRequestHistoryRepository inventoryRequestHistoryRepository;
 
 	@Transactional
 	public InventoryRequest createRequest(InventoryRequestDto request) {
@@ -64,17 +78,30 @@ public class InventoryRequestService {
 			throw new RuntimeException("Atleast one item is required");
 		}
 
+		Department department = departmentRepository.findById(request.getDepartmentId())
+				.orElseThrow(() -> new RuntimeException("Department not found"));
+
+		userDepartmentRepository
+				.findByUser_UserIdAndDepartment_DepartmentId(request.getUserId(), request.getDepartmentId())
+				.orElseThrow(() -> new RuntimeException("User is not assigned to this department"));
+
 		Status pendingStatus = statusRepository.findByStatusCode("PENDING")
 				.orElseThrow(() -> new RuntimeException("PENDING status not found"));
+
+		Status idleClarificationStatus = statusRepository.findByStatusCode("IDLE")
+				.orElseThrow(() -> new RuntimeException("IDLE clarification status not found"));
 
 		// Create request header
 		InventoryRequest newRequest = new InventoryRequest();
 		newRequest.setUser(user);
+		newRequest.setDepartment(department);
 		newRequest.setStatus(pendingStatus);
+		newRequest.setClarificationStatus(idleClarificationStatus);
 		newRequest.setRequestedAt(LocalDateTime.now());
 
 		// save request first then create the request items
 		InventoryRequest savedRequest = inventoryRequestRepository.save(newRequest);
+		saveHistory(savedRequest, user, HistoryAction.CREATED);
 
 		// create request items
 		for (InventoryRequestItemDto itemDto : request.getItems()) {
@@ -92,13 +119,22 @@ public class InventoryRequestService {
 		return savedRequest;
 	}
 
-	public Page<InventoryRequest> getAllRequest(String search, String status, Long userId, Pageable pageable) {
+	public Page<InventoryRequest> getAllRequest(String search, String status, LocalDate fromDate, LocalDate toDate,
+			Long departmentId, Long userId, Pageable pageable) {
 
-		return inventoryRequestRepository.searchAndFilterPerUser(search, status, userId, pageable);
+		return inventoryRequestRepository.searchAndFilterPerUser(search, status, fromDate, toDate, departmentId, userId,
+				pageable);
 	}
 
-	public Page<InventoryRequest> getAllRequestsManage(Long hodUserId, String search, Pageable pageable) {
-		return inventoryRequestRepository.searchAndFilterAllManage(hodUserId, search, pageable);
+	public Page<InventoryRequest> getAllRequestsManage(Long hodUserId, Long departmentId, String search,
+			Pageable pageable) {
+		UserDepartment hodDepartment = userDepartmentRepository
+				.findByUser_UserIdAndDepartment_DepartmentId(hodUserId, departmentId)
+				.orElseThrow(() -> new RuntimeException("You are not assigned to this department"));
+		if (hodDepartment.getRole() != Role.HOD) {
+			throw new RuntimeException("You are not authorized to manage requests");
+		}
+		return inventoryRequestRepository.searchAndFilterAllManage(departmentId, search, pageable);
 	}
 
 	@Transactional
@@ -110,9 +146,13 @@ public class InventoryRequestService {
 
 		User hod = userRepository.findById(hodUserId).orElseThrow(() -> new RuntimeException("HOD not found"));
 
-		if (request.getUser().getDepartment() == null || hod.getDepartment() == null
-				|| !request.getUser().getDepartment().getDepartmentId().equals(hod.getDepartment().getDepartmentId())) {
+		Long departmentId = request.getDepartment().getDepartmentId();
 
+		UserDepartment hodDepartment = userDepartmentRepository
+				.findByUser_UserIdAndDepartment_DepartmentId(hodUserId, departmentId)
+				.orElseThrow(() -> new RuntimeException("You cannot manage this request"));
+
+		if (hodDepartment.getRole() != Role.HOD) {
 			throw new RuntimeException("You cannot manage this request");
 		}
 
@@ -125,6 +165,10 @@ public class InventoryRequestService {
 			if (dto.getItems() == null || dto.getItems().isEmpty()) {
 
 				throw new RuntimeException("Approval items are required");
+			}
+
+			if (dto.getItems().size() != request.getItems().size()) {
+				throw new RuntimeException("All request items are required");
 			}
 
 			for (InventoryRequestApprovalItemDto approvalItem : dto.getItems()) {
@@ -190,6 +234,7 @@ public class InventoryRequestService {
 			request.setApprovedAt(LocalDateTime.now());
 			request.setApprovalRemarks(dto.getApprovalRemarks());
 			request.setUpdatedAt(LocalDateTime.now());
+			saveHistory(request, hod, HistoryAction.APPROVED);
 
 		} else if ("REJECTED".equals(action)) {
 
@@ -205,6 +250,7 @@ public class InventoryRequestService {
 			request.setRejectedAt(LocalDateTime.now());
 			request.setRejectionRemarks(dto.getRejectionRemarks());
 			request.setUpdatedAt(LocalDateTime.now());
+			saveHistory(request, hod, HistoryAction.REJECTED);
 
 		} else if ("CLARIFY".equals(action)) {
 
@@ -221,8 +267,11 @@ public class InventoryRequestService {
 
 			inventoryRequestMessageRepository.save(message);
 
-			request.setClarificationPending(true);
+			Status requestedStatus = statusRepository.findByStatusCode("REQUESTED")
+					.orElseThrow(() -> new RuntimeException("REQUESTED status not found"));
+			request.setClarificationStatus(requestedStatus);
 			request.setUpdatedAt(LocalDateTime.now());
+			saveHistory(request, hod, HistoryAction.CLARIFICATION_REQUESTED);
 
 		} else {
 			throw new RuntimeException("Invalid action");
@@ -231,23 +280,95 @@ public class InventoryRequestService {
 		return inventoryRequestRepository.save(request);
 	}
 
+	public List<InventoryRequest> getDailyReport(Long hodUserId, Long departmentId) {
+
+		UserDepartment hodDepartment = userDepartmentRepository
+				.findByUser_UserIdAndDepartment_DepartmentId(hodUserId, departmentId)
+				.orElseThrow(() -> new RuntimeException("You are not assigned to this department"));
+
+		if (hodDepartment.getRole() != Role.HOD) {
+			throw new RuntimeException("You are not authorized to view daily report");
+		}
+
+		LocalDateTime startOfDay = LocalDate.now().atStartOfDay();
+		LocalDateTime endOfDay = LocalDate.now().plusDays(1).atStartOfDay();
+
+		return inventoryRequestRepository
+				.findByDepartment_DepartmentIdAndRequestedAtGreaterThanEqualAndRequestedAtLessThan(departmentId,
+						startOfDay, endOfDay);
+	}
+
 	@Transactional
-	public InventoryRequestMessage sendMessage(Long requestId, InventoryRequestMessageDto dto) {
+	public InventoryRequest markAsRead(Long requestId, Long userId) {
 		InventoryRequest request = inventoryRequestRepository.findById(requestId)
 				.orElseThrow(() -> new RuntimeException("Request not found"));
+		if (!request.getUser().getUserId().equals(userId)) {
+			throw new RuntimeException("You cannot update this request");
+		}
+		if (!"REQUESTED".equals(request.getClarificationStatus().getStatusCode())) {
+			throw new RuntimeException("No clarification is pending");
+		}
+		Status viewedStatus = statusRepository.findByStatusCode("VIEWED")
+				.orElseThrow(() -> new RuntimeException("VIEWED status not found"));
+
+		request.setClarificationStatus(viewedStatus);
+		saveHistory(request, request.getUser(), HistoryAction.CLARIFICATION_VIEWED);
+		return inventoryRequestRepository.save(request);
+	}
+
+	private void saveHistory(InventoryRequest request, User user, HistoryAction action) {
+		InventoryRequestHistory history = new InventoryRequestHistory();
+
+		history.setInventoryRequest(request);
+		history.setUser(user);
+		history.setAction(action);
+		history.setCreatedAt(LocalDateTime.now());
+
+		inventoryRequestHistoryRepository.save(history);
+	}
+
+	@Transactional
+	public InventoryRequestMessage sendMessage(Long requestId, InventoryRequestMessageDto dto) {
+
+		InventoryRequest request = inventoryRequestRepository.findById(requestId)
+				.orElseThrow(() -> new RuntimeException("Request not found"));
+
 		User sender = userRepository.findById(dto.getUserId())
 				.orElseThrow(() -> new RuntimeException("User not found"));
+
 		if (dto.getMessage() == null || dto.getMessage().trim().isEmpty()) {
 			throw new RuntimeException("Message is required");
 		}
+
+		Long departmentId = request.getDepartment().getDepartmentId();
+
+		UserDepartment userDepartment = userDepartmentRepository
+				.findByUser_UserIdAndDepartment_DepartmentId(sender.getUserId(), departmentId)
+				.orElseThrow(() -> new RuntimeException("User is not assigned to this department"));
+
 		InventoryRequestMessage message = new InventoryRequestMessage();
+
 		message.setInventoryRequest(request);
 		message.setSenderUser(sender);
 		message.setMessage(dto.getMessage().trim());
-		if (sender.getRole() == Role.HOD) {
-			request.setClarificationPending(true);
-		} else if (sender.getRole() == Role.USER) {
-			request.setClarificationPending(false);
+
+		if (userDepartment.getRole() == Role.HOD) {
+			Status requestedStatus = statusRepository.findByStatusCode("REQUESTED")
+					.orElseThrow(() -> new RuntimeException("REQUESTED status not found"));
+			request.setClarificationStatus(requestedStatus);
+			saveHistory(request, sender, HistoryAction.CLARIFICATION_REQUESTED);
+
+		} else if (userDepartment.getRole() == Role.USER) {
+			if (!request.getUser().getUserId().equals(sender.getUserId())) {
+				throw new RuntimeException("You cannot reply to this request");
+			}
+			Status repliedStatus = statusRepository.findByStatusCode("REPLIED")
+					.orElseThrow(() -> new RuntimeException("REPLIED Status not found"));
+			request.setClarificationStatus(repliedStatus);
+			saveHistory(request, sender, HistoryAction.CLARIFICATION_REPLIED);
+
+		} else {
+			throw new RuntimeException("Invalid role");
 		}
 
 		inventoryRequestMessageRepository.save(message);
@@ -257,37 +378,55 @@ public class InventoryRequestService {
 	}
 
 	public List<InventoryRequestMessage> getMessages(Long requestId) {
-
 		if (!inventoryRequestRepository.existsById(requestId)) {
 			throw new RuntimeException("Request not found");
 		}
 		return inventoryRequestMessageRepository.findByInventoryRequest_InventoryRequestIdOrderBySendedAtAsc(requestId);
 	}
 
-	@Scheduled(fixedRate = 3600000)
+	@Scheduled(cron = "0 0 12 * * *")
 	@Transactional
 	public void sendPendingRequestReminders() {
 		LocalDateTime cutoff = LocalDateTime.now().minusDays(3);
-
 		List<InventoryRequest> requests = inventoryRequestRepository
 				.findByStatus_StatusCodeAndRequestedAtBeforeAndReminderSentFalse("PENDING", cutoff);
-
 		for (InventoryRequest request : requests) {
 			User user = request.getUser();
 			if (user == null || user.getEmail() == null) {
 				continue;
 			}
+			Long departmentId = request.getDepartment().getDepartmentId();
+
+			List<UserDepartment> hodDepartments = userDepartmentRepository
+					.findByDepartment_DepartmentIdAndRole(departmentId, Role.HOD);
 
 			try {
-				SimpleMailMessage mail = new SimpleMailMessage();
-				mail.setTo(user.getEmail());
-				mail.setSubject("Inventory Request Pending - Request #" + request.getInventoryRequestId());
-				mail.setText("Hello" + user.getName() + ", \n\n" + "Your inventory request #"
-						+ String.format("%03d", request.getInventoryRequestId())
-						+ " has been pending for more than 3 days. \n\n" + "Regards, \n"
-						+ "Inventory Management System");
+				String requestNumber = String.format("%03d", request.getInventoryRequestId());
+				String subject = "Inventory Request Pending - Request #" + request.getInventoryRequestId();
+				String message = "Hello, \n\n" + "Inventory request #" + requestNumber
+						+ " has been pending for more than 3 days.\n\n" + "Requetsed By: " + user.getName() + "\n"
+						+ "Department: " + request.getDepartment().getDepartmentName() + "\n\n"
+						+ "Please review this request.\n\n" + "Regards, \n" + "Inventory Management System,\n"
+						+ "Rytways.";
+				if (user.getEmail() != null && !user.getEmail().isBlank()) {
+					SimpleMailMessage userMail = new SimpleMailMessage();
+					userMail.setTo(user.getEmail());
+					userMail.setSubject(subject);
+					userMail.setText(message);
+					mailSender.send(userMail);
+				}
+				for (UserDepartment hodDepartment : hodDepartments) {
+					User hod = hodDepartment.getUser();
 
-				mailSender.send(mail);
+					if (hod == null || hod.getEmail() == null || hod.getEmail().isBlank()) {
+						continue;
+					}
+					SimpleMailMessage hodMail = new SimpleMailMessage();
+					hodMail.setTo(hod.getEmail());
+					hodMail.setSubject(subject);
+					hodMail.setText(message);
+					mailSender.send(hodMail);
+				}
 				request.setReminderSent(true);
 				inventoryRequestRepository.save(request);
 			} catch (Exception e) {
@@ -295,6 +434,126 @@ public class InventoryRequestService {
 						+ e.getMessage());
 			}
 		}
+	}
+
+	@Transactional
+	public InventoryRequest updateInventoryRequest(Long requestId, InventoryRequestDto dto) {
+		InventoryRequest request = inventoryRequestRepository.findById(requestId)
+				.orElseThrow(() -> new RuntimeException("Request not found"));
+		if (!"PENDING".equals(request.getStatus().getStatusCode())) {
+			throw new RuntimeException("Only pending request can be edited");
+		}
+
+		if (dto.getItems() == null || dto.getItems().isEmpty()) {
+			throw new RuntimeException("Request item is required");
+		}
+
+		Long userId = request.getUser().getUserId();
+		Long departmentId = request.getDepartment().getDepartmentId();
+
+		userDepartmentRepository.findByUser_UserIdAndDepartment_DepartmentId(userId, departmentId)
+				.orElseThrow(() -> new RuntimeException("User is not assigned to this department"));
+
+		List<Long> inventoryIds = dto.getItems().stream().map(InventoryRequestItemDto::getInventoryId).toList();
+		if (inventoryIds.size() != inventoryIds.stream().distinct().count()) {
+			throw new RuntimeException("Duplicate invetory items not allowed");
+		}
+
+		List<InventoryRequestItem> existingItems = inventoryRequestItemRepository
+				.findByInventoryRequest_InventoryRequestId(requestId);
+
+		java.util.Set<Long> updatedInventoryIds = new java.util.HashSet<>();
+
+		for (InventoryRequestItemDto itemDto : dto.getItems()) {
+
+			Long inventoryId = itemDto.getInventoryId();
+			Integer quantity = itemDto.getQuantity();
+
+			if (inventoryId == null) {
+				throw new RuntimeException("Inventory is required");
+			}
+
+			if (quantity == null || quantity < 1) {
+				throw new RuntimeException("Request quantity must be at least 1");
+			}
+
+			Inventory inventory = inventoryRepository.findById(inventoryId)
+					.orElseThrow(() -> new RuntimeException("Inventory not found"));
+
+			if (quantity > inventory.getAvailableQuantity()) {
+				throw new RuntimeException("Quantity can't be higher than available quantity for "
+						+ inventory.getMaterial().getMaterialName());
+			}
+
+			updatedInventoryIds.add(inventoryId);
+
+			InventoryRequestItem existingItem = existingItems.stream()
+					.filter(item -> item.getInventory().getInventoryId().equals(inventoryId)).findFirst().orElse(null);
+
+			if (existingItem != null) {
+				existingItem.setRequestQuantity(quantity);
+				inventoryRequestItemRepository.save(existingItem);
+			} else {
+				InventoryRequestItem newItem = new InventoryRequestItem();
+				newItem.setInventoryRequest(request);
+				newItem.setInventory(inventory);
+				newItem.setRequestQuantity(quantity);
+				inventoryRequestItemRepository.save(newItem);
+			}
+		}
+
+		for (InventoryRequestItem existingItem : existingItems) {
+
+			Long inventoryId = existingItem.getInventory().getInventoryId();
+
+			if (!updatedInventoryIds.contains(inventoryId)) {
+				inventoryRequestItemRepository.delete(existingItem);
+			}
+		}
+
+		request.setUpdatedAt(LocalDateTime.now());
+		saveHistory(request, request.getUser(), HistoryAction.UPDATED);
+		return inventoryRequestRepository.save(request);
+
+	}
+
+	public Page<InventoryRequest> getAllRequestsView(Long hodUserId, Long departmentId, String search,
+			Pageable pageable) {
+		UserDepartment hodDepartment = userDepartmentRepository
+				.findByUser_UserIdAndDepartment_DepartmentId(hodUserId, departmentId)
+				.orElseThrow(() -> new RuntimeException("You are not assigned to this department"));
+		if (hodDepartment.getRole() != Role.HOD) {
+			throw new RuntimeException("You are not authorized to manage requests");
+		}
+		return inventoryRequestRepository.searchAndFilterAllView(departmentId, search, pageable);
+	}
+
+	@Transactional
+	public InventoryRequest cancelRequest(Long requestId, Long userId) {
+
+		InventoryRequest request = inventoryRequestRepository.findById(requestId)
+				.orElseThrow(() -> new RuntimeException("Request not found"));
+
+		if (!request.getUser().getUserId().equals(userId)) {
+			throw new RuntimeException("You cannot cancel this request");
+		}
+
+		if (!"PENDING".equals(request.getStatus().getStatusCode())) {
+			throw new RuntimeException("Only pending requests can be cancelled");
+		}
+
+		Status cancelledStatus = statusRepository.findByStatusCode("CANCELLED")
+				.orElseThrow(() -> new RuntimeException("CANCELLED status not found"));
+
+		request.setStatus(cancelledStatus);
+
+		InventoryRequestHistory history = new InventoryRequestHistory();
+		history.setInventoryRequest(request);
+		history.setUser(request.getUser());
+		history.setAction(HistoryAction.CANCELLED);
+		inventoryRequestHistoryRepository.save(history);
+
+		return inventoryRequestRepository.save(request);
 	}
 
 //	public List<InventoryRequest> createRequests(InventoryRequestDto dto) {
@@ -357,32 +616,6 @@ public class InventoryRequestService {
 //
 //	}
 //
-//	public InventoryRequest updateInventoryRequest(Long requestId, InventoryRequestDto dto) {
-//		InventoryRequest request = inventoryRequestRepository.findById(requestId)
-//				.orElseThrow(() -> new RuntimeException("Request not found"));
-////		if (request.getRequestStatus() != RequestStatus.PENDING) {
-////			throw new RuntimeException("Only pending request can be edited");
-////		}
-//
-//		if (dto.getItems() == null || dto.getItems().isEmpty()) {
-//			throw new RuntimeException("Request item is required");
-//		}
-//
-//		InventoryRequestItemDto item = dto.getItems().get(0);
-//		Integer quantity = item.getQuantity();
-//
-//		if (quantity == null || quantity < 1) {
-//			throw new RuntimeException("Request quantity must be atleast 1");
-//		}
-////		Material material = request.getMaterial();
-////		if (quantity > material.getAvailableQuantity()) {
-////			throw new RuntimeException("Quantity can't be higher than avilable quantity");
-////		}
-////		request.setRequestQuantity(quantity);
-//		return inventoryRequestRepository.save(request);
-//
-//	}
-//
 //	public void deleteInventoryRequest(Long requestId) {
 //		InventoryRequest request = inventoryRequestRepository.findById(requestId)
 //				.orElseThrow(() -> new RuntimeException("Request not found"));
@@ -391,10 +624,6 @@ public class InventoryRequestService {
 ////			throw new RuntimeException("Only pending requests can be cancelled");
 ////		}
 //		inventoryRequestRepository.delete(request);
-//	}
-//
-//	public Page<InventoryRequest> getAllRequestsView(String search, Pageable pageable) {
-//		return inventoryRequestRepository.searchAndFilterAllView(search, pageable);
 //	}
 //
 //	public List<InventoryRequest> getRequestDetails(Long userId, Long materialId) {

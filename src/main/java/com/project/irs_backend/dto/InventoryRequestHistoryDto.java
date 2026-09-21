@@ -9,10 +9,9 @@ import lombok.NoArgsConstructor;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class InventoryRequestDto {
+public class InventoryRequestHistoryDto {
 
-	private Long userId;
-	private Long departmentId;
-	private List<InventoryRequestItemDto> items;
+	private Long requestId;
+	private List<InventoryRequestHistoryItemDto> history;
 
 }

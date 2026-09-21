@@ -29,11 +29,11 @@ public interface MaterialRepository extends JpaRepository<Material, Long> {
 	List<Category> findCategoriesByStock();
 
 	@Query(value = """
-			select m.* from material m where m.category_id = :categoryId and
-			not exists (select 1 from inventory i where i.material_id = m.material_id)
-			order by m.material_name
-			""", nativeQuery = true)
-	List<Material> findMaterialsForAddStock(@Param("categoryId") Long categoryId);
+			select m.* from material m where m.category_id = :categoryId and (
+			not exists (select 1 from inventory i where i.material_id = m.material_id) or m.material_id = :materialId)
+			order by m.material_name;
+						""", nativeQuery = true)
+	List<Material> findMaterialsForAddStock(@Param("categoryId") Long categoryId, @Param("materialId") Long materialId);
 
 //
 //	@Query(value = """

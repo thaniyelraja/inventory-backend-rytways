@@ -46,9 +46,10 @@ public class MaterialController {
 		return ResponseEntity.ok(materialService.getCategories());
 	}
 
-	@GetMapping("/materials-for-add-stock/{categoryId}")
-	public ResponseEntity<List<Material>> getMaterialsForAddStock(@PathVariable Long categoryId) {
-		return ResponseEntity.ok(materialService.getMaterialsForAddStock(categoryId));
+	@GetMapping("/materials-for-add-stock")
+	public ResponseEntity<List<Material>> getMaterialsForAddStock(@RequestParam Long categoryId,
+			@RequestParam(required = false) Long materialId) {
+		return ResponseEntity.ok(materialService.getMaterialsForAddStock(categoryId, materialId));
 	}
 
 	@PostMapping("/create")
